@@ -1,6 +1,6 @@
 var Images = {
-	Block: new Image(),
-	Chest: [new Image(), new Image()],
+	Block: img("block.png"),
+	Chest: [img("chest1.png"), img("chest.png")],
 	async setupBlock() {
 		var img = this.Block;
 		var res = 1;
@@ -64,7 +64,7 @@ var Images = {
 			block[name] = arr;
 		}
 	},
-	Door: new Image(),
+	Door: img("door.png"),
 	async setupDoor() {
 		var img = this.Door;
 		var res = 1;
@@ -98,7 +98,7 @@ var Images = {
 			door[i] = imagedata;
 		}
 	},
-	Slime: new Image(),
+	Slime: img("slime.png"),
 	async setupSlime() {
 		var img = this.Slime;
 		var s = 18;
@@ -132,10 +132,16 @@ var Images = {
 			slime[name] = imagedata;
 		}
 	},
-	Cookie: new Image(),
-	Slot: new Image(),
-	InUse: new Image()
+	Cookie: img("cookie.png"),
+	Slot: img("slot.png"),
+	InUse: img("inuse.png"),
+	Sword: img("sword.png")
 };
+function img(src) {
+	var img = new Image();
+	loadImg(img, src);
+	return img;
+}
 var Bitmaps = {
 	Block: {},
 	Slime: {},
@@ -145,14 +151,6 @@ function loadImg(img, src) {
 	img.src = src;
 	img.loaded = new Promise(resolve => img.onload = resolve);
 }
-loadImg(Images.Block, "block.png");
 Images.setupBlock();
-loadImg(Images.Chest[0], "chest1.png");
-loadImg(Images.Chest[1], "chest.png");
-loadImg(Images.Door, "door.png");
-Images.setupDoor();
-loadImg(Images.Slime, "slime.png");
+Images.setupDoor();;
 Images.setupSlime();
-loadImg(Images.Cookie, "cookie.png");
-loadImg(Images.Slot, "nslot.png");
-loadImg(Images.InUse, "inuse.png");

@@ -8,11 +8,6 @@ class Item extends Entity{
 		this.vy = sin(rad) * .3;
 		this.friction **= 2;
 	}
-	bounce = true;
-}
-class Cookie extends Item{
-	img = Images.Cookie;
-	static img = Images.Cookie;
 	draw(dx, dy, scale) {
 		var {px: x, py: y} = this;
 		var len = round(this.s * scale);
@@ -24,5 +19,28 @@ class Cookie extends Item{
 			what.inv.add(this.class);
 		}
 	}
+	bounce = true;
+	static s = 5/8;
+	static rad = 0;
+}
+class Cookie extends Item{
+	img = Images.Cookie;
+	static img = Images.Cookie;
 	class = Cookie;
+}
+class Sword extends Item{
+	img = Images.Sword;
+	static img = Images.Sword;
+	draw(dx, dy, scale) {
+		var {px: x, py: y} = this;
+		var len = round(this.s * scale);
+		ctx.drawImage(this.img, dx + x * scale, dy + y * scale, len, len);
+	}
+	collide(what) {
+		super.collide();
+	}
+	s = 4/8;
+	class = Sword;
+	static s = 4/8;
+	static rad = PI/4;
 }

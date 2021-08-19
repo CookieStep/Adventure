@@ -209,7 +209,7 @@ class Slime extends Enemy{
 			ctx.lineTo(dx + x * scale, dy + y * scale);
 			ctx.stroke();
 		}
-		if(this.lines) for(let [rad, spd] of this.lines) {
+		/*if(this.lines) for(let [rad, spd] of this.lines) {
 			var dis = abs(spd) * 3;
 			ctx.strokeStyle = spd > 0? "green": "red";
 			ctx.beginPath();

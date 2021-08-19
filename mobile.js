@@ -22,6 +22,11 @@ class Pointer{
 		ctx.arc(this.x, this.y, scale/4, 0, PI * 2);
 		ctx.fillStyle = `hsla(${this.id/touches.size * 360}, 100%, 50%, ${.2 + this.active * .8})`;
 		ctx.fill();
+		var dis = distance(this.mx, this.my);
+		ctx.beginPath();
+		ctx.arc(this.sx, this.sy, dis, 0, PI * 2);
+		ctx.strokeStyle = ctx.fillStyle;
+		ctx.stroke();
 	}
 	update(touch) {
 		touch = (touch || this.touch);

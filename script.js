@@ -27,7 +27,9 @@ var {
 	atan2: atan,
 	tan,
 	cos,
-	sin
+	sin,
+	sign,
+	pow
 } = Math;
 
 var rand = (t = 1, b = 0) => b + random() * (t - b);
@@ -51,13 +53,14 @@ var rotate = (value, range) => {
 	return value;
 }
 var rDis = (a, b, c=(PI * 2)) => rotate(loop(b - a, c), c);
+var powR = (x, y) => (pow(x, y) - 1)/(x - 1);
 
 var debug = {
 	showBuild: 0,
 	showBuildFlow: {
 		enabled: false,
 		flowTime: 1,
-		afterFlow: 0
+		afterFlow: 10
 	},
 	showConnect: {
 		enabled: false,
@@ -81,7 +84,7 @@ var rcx = 0, rcy = 0;*/
 var rcb;
 function update() {
 	try{
-	ctx.fillStyle = "#0007";
+	ctx.fillStyle = "#000";
 	ctx.fillRect(0, 0, innerWidth, innerHeight);
 	game.update();
 	//mroom.updateEntities();
@@ -95,8 +98,10 @@ function update() {
 		if(room.life || mroom == room) room.update();
 	});
 	// rooms.forEach(room => room.load());
-	mroom.draw();
-	if(player.goto?.draw()) makeRCM();
+	//mroom.draw();
+	if(player.goto && !player.goto.loading) {player.goto
+		.loadFromDoor(player.door).then((a) => a && makeRCM());
+	}
 	//mroom.loadConns();
 	// mroom.drawConns();
 	var x = (canvas.width)/2;
@@ -156,7 +161,7 @@ function update() {
 			for(let [room, x, y] of active) {
 				for(let i in room.conn) {
 					let nroom = room.conn[i];
-					if(!nroom || !nroom.drawn) continue;
+					if(!nroom) continue;
 					let coord = doorcoord[i];
 					let rx = x + coord[0];
 					let ry = y + coord[1];
@@ -168,7 +173,9 @@ function update() {
 						rx,
 						ry
 					];
-					arr.push(item);
+					if(nroom.drawn) {
+						arr.push(item);
+					}
 					rcm.push(item);
 				}
 			}
@@ -178,9 +185,11 @@ function update() {
 	}
 	if(!rcm[0] || rcm[0][0] != mroom) makeRCM();
 	for(let [room, mx, my] of rcm) {
-		var dx = x + mroom.canvas.width * mx;
-		var dy = y + mroom.canvas.height * my;
-		ctx.drawImage(room.canvas, dx, dy);
+		if(room.drawn) {
+			var dx = x + mroom.canvas.width * mx;
+			var dy = y + mroom.canvas.height * my;
+			ctx.drawImage(room.canvas, dx, dy);
+		}
 	}
 	for(let [room, mx, my] of rcm) {
 		if(room.life > 100) {
@@ -190,9 +199,9 @@ function update() {
 		}
 	}
 	var arr = player.inv.hotbar;
-	var max = arr.max;
+	var {max} = arr;
 	{
-		let scale = window.scale * 2;
+		let scale = floor(canvas.length/(8 * max * (9/8))) * 8;
 		var slot = 9/8 * scale;
 		var simg = 5/8 * scale;
 		var num = simg + scale/8;
@@ -205,15 +214,17 @@ function update() {
 			let x = (canvas.width - (max - i * 2) * slot)/2;
 			ctx.drawImage((i == selected)? Images.InUse: Images.Slot, x, y, slot, slot);
 			if(spot) {
-				ctx.drawImage(item.img, x + pad, y + pad, simg, simg);
-				//if(count - 1) {
+				let simg2 = item.s * scale;
+				let pad2 = (slot - simg2)/2;
+				ctx.drawImage(item.img, x + pad2, y + pad2, simg2, simg2);
+				if(count - 1) {
 					ctx.font = `${pad}px Arial`;
 					ctx.fillStyle = "#000";
 					ctx.fillText(count, x + num, y + pad);
 					ctx.lineWidth = 1;
 					ctx.strokeStyle = "#000";
 					ctx.strokeText(count, x + num, y + pad);
-				//}
+				}
 			}
 			var mx = x + slot;
 			var my = y + slot;
@@ -234,13 +245,17 @@ addEventListener("keyup", ({code}) => keys.delete(code));
 /**@type {Room[]}*/
 var rooms = [];
 var length;
-var zoom = 1;
+var zoom = 10;
 function resize(zm) {
+	rcm = [];
+	if(isNaN(zm)) zm = zoom/SIZE;
 	canvas.width = innerWidth;
 	canvas.height = innerHeight;
 	length = Math.min(innerWidth, innerHeight);
-	scale = floor(length/(SIZE*8)) * 8 * (isNaN(zm)? zoom : zm);
+	canvas.length = length;
+	scale = floor(length/(SIZE*zm*8)) * 8;
 	length = scale * SIZE;
+	rooms.forEach(room => delete room.drawd);
 }
 var player;
 async function start() {
@@ -253,14 +268,16 @@ async function start() {
 		resetTypes();
 		finished = await initRooms();
 	}
-	resize(zoom);
+	resize(zoom/SIZE);
 	for(let room of rooms) {
 		let b = ceil(rand(4, 1));
 		for(let a = 0; a < b; a++) new Slime(room);
 	}//*/
 	new Slime(mroom);
 	player = new Player(mroom);
+	player.inv.add(Sword);
 	//player.update();
+	mroom.reload();
 	console.log("ready");
 	setInterval(update, 25);
 }
@@ -304,6 +321,7 @@ var game = {
 		var vx = 0, vy = 0;
 		var px = 0, py = 0;
 		var s = scale * 2;
+		var dis2 = 0;
 		if(touches.size) {
 			let touch = touches.get(0);
 			if(touch && touch.active) {
@@ -313,7 +331,8 @@ var game = {
 			touch = touches.get(1);
 			if(touch && touch.active) {
 				px += touch.mx / s;
-				px += touch.my / s;
+				py += touch.my / s;
+				dis2 = 1;
 			}
 		}
 		if(keys.has("KeyA")) {
@@ -328,13 +347,29 @@ var game = {
 		if(keys.has("KeyS")) {
 			vy += 1;
 		}
+		if(keys.has("ArrowLeft")) {
+			px -= 1;
+			dis2 = 1;
+		}
+		if(keys.has("ArrowRight")) {
+			px += 1;
+			dis2 = 1;
+		}
+		if(keys.has("ArrowUp")) {
+			py -= 1;
+			dis2 = 1;
+		}
+		if(keys.has("ArrowDown")) {
+			py += 1;
+			dis2 = 1;
+		}
 		var rad = atan(vy, vx);
 		var rad2 = atan(py, px);
 		var dis = distance(vx, vy);
 		if(dis > 1) dis = 1;
 		this.mx = cos(rad) * dis;
 		this.my = sin(rad) * dis;
-		this.px = cos(rad2) * dis;
-		this.py = sin(rad2) * dis;
+		this.px = cos(rad2) * dis2;
+		this.py = sin(rad2) * dis2;
 	}
 }

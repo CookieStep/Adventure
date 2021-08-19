@@ -323,11 +323,43 @@ class Player extends Entity{
 		if(vy > +1) vy = +1;
 		++vx; ++vy;
 		ctx.drawImage(this.canvas, vx * len + vx, vy * len + vy, len, len, dx + x * scale, dy + y * scale, len, len);
+		var item = this.inv.hotbar[this.inv.selected];
+		if(item) {
+			item = item[0];
+			var {rad} = this;
+			var c = cos(rad), s = sin(rad);
+			var px = this.mx + (this.s/2 + item.s) * c - item.s/2;
+			var py = this.my + (this.s/2 + item.s) * s - item.s/2;
+			var len = item.s * scale;
+			px *= scale;
+			py *= scale;
+			
+			ctx.zoom(dx + px, dy + py, len, len, rad + item.rad);
+			ctx.drawImage(item.img, 0, 0, 1, 1);
+			ctx.resetTransform();
+		}
 	}
 	tick() {
 		this.vx += game.mx * this.spd;
 		this.vy += game.my * this.spd;
 		this.room.life = 200;
+		if(game.px || game.py) {
+			this.dir = atan(game.py, game.px);
+		}
+		var f = friction ** 1.5;
+		this.rad += this.vr;
+		this.vr *= f;
+		
+		var dis = rDis(this.rad + this.vr * powR(f, 100), this.dir);
+		var aDis = abs(dis);
+		var lim = .07
+		//if(weight) lim /= weight;
+		if(aDis > lim) aDis = lim;
+		this.vr += aDis * sign(dis);
+		if(abs(rDis(this.dir, this.rad)) < lim) {
+			this.vr = 0;
+			this.rad = this.dir;
+		}
 	}
 	update() {
 		super.update();
@@ -336,6 +368,9 @@ class Player extends Entity{
 			this.goto.life = 200;
 		}
 	}
+	vr = 0;
+	dir = 0;
+	rad = 0;
 	inv = new Inventory(this);
 	collide(what) {
 	}
@@ -349,6 +384,7 @@ function Inventory(parent) {
 	this.hotbar = hotbar;
 	this.inventory = inv;
 	this.selected = 0;
+	Object.defineProperty(this, "main", () => this.hotbar[this.selected]);
 	this.add = function(item, count=1) {
 		if(itemMap.has(item)) {
 			var slot = itemMap.get(item);

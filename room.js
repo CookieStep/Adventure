@@ -139,6 +139,7 @@ class Room {
 				this.setTile(x, y, tile);
 			}
 		}
+		this.doorTiles = doors;
 		if (this.type == EMPTY) {
 			this.air = air;
 			return;
@@ -195,7 +196,11 @@ class Room {
 		}else if(this.type == CHEST) {
 			order = dropletOrder(5, this);
 		} else order = cornerDrops(0, this);
-		for (let [x, y] of order) {
+		if(this.type == START) {
+			let set = new Set(this.door.filter(door => door));
+			Groups = [set];
+			this.entered = set;
+		}else for (let [x, y] of order) {
 			let i = this.I(x, y);
 			let tiles = [...this.tiles];
 			tiles[i] = new Block(this, x, y);
@@ -402,9 +407,10 @@ class Room {
 		air = shuffle(air);
 		first = true;
 		//Break useless blocks loop
+		
 		if (this.type == MAZE) {
 			order = shuffle(air);
-			order = [...order, ...order];
+			//order = [...order, ...order];
 			for (let [x, y] of order) {
 				let i = this.I(x, y);
 				
@@ -498,7 +504,7 @@ class Room {
 				order = dropletOrder(1, this, 3);
 				order = [...order, ...order];
 			}else order = shuffle(air);
-			for (let [x, y] of order) {
+			if(this.type != START) for (let [x, y] of order) {
 				let i = this.I(x, y);
 				let newTiles = [...this.tiles];
 				newTiles[i] = null;
@@ -765,13 +771,12 @@ class Room {
 		return true;
 	}
 	get drawn() {
-		var {canvas} = this;
-		return !((!this.drawd && !this.loading) || canvas.length != length);
+		return this.drawd || this.loading;
 	}
 	draw(onscreen) {
 		var {canvas, SIZE} = this;
 		var scale = length/SIZE;
-		if((!this.drawd && !this.loading) || canvas.length != length) {
+		if(!this.drawn) {
 			this.drawd = true;
 			canvas.width = length;
 			canvas.height = length;
@@ -797,11 +802,11 @@ class Room {
 		}
 		return r;
 	}
-	async load() {
+	/*async load() {
 		var {canvas, SIZE} = this;
 		var scale = length/SIZE;
 		if((!this.drawn && !this.loading) || canvas.length != length) {
-			this.drawn = true;
+			this.drawd = true;
 			canvas.width = length;
 			canvas.height = length;
 			canvas.length = length;
@@ -817,7 +822,111 @@ class Room {
 			}
 			this.loading = false;
 		}
+	}*/
+	async loadFromDoor(type) {
+		var {canvas, SIZE} = this;
+		var scale = length/SIZE;
+		/**@param {number} x @param {number} y*/
+		function near(x, y) {
+			return nearby.map(([dx, dy]) => [x + dx, y + dy]).filter(([x, y]) => (x >= 0 && y >= 0 && x < SIZE && y < SIZE));
+		}
+		if(!this.drawn) {
+			canvas.width = length;
+			canvas.height = length;
+			canvas.length = length;
+			this.reload();
+		}
+		let Gate = this.door[gate(type)];
+		if(!this.entered.has(Gate)) {
+			this.loading = true;
+			
+			let spreadMap = new Array(this.tiles.length);
+			let active = this.doorTiles.filter(([x, y, gate]) => gate == Gate);
+			this.entered.add(Gate);
+			
+			//let ts = 0;
+			while (active.length) {
+				let array = [];
+				//++ts;
+				for (let [x, y, c] of active) {
+					this.updateTile(x, y);
+					near(x, y).forEach(([x, y]) => {
+						//Foreach nearby block
+						let i = this.I(x, y);
+						let tile = this.tiles[i];
+						if (!tile || tile.passable) {
+							if (spreadMap[i]) {
+								/*if (spreadMap[i] != c) {
+									join(c, spreadMap[i]);
+								}*/
+							} else {
+								spreadMap[i] = c;
+								array.push([x, y, c]);
+							}
+						}
+						if(tile instanceof Door) {
+							this.entered.add(tile.gate);
+						}
+					});
+				}
+				await delay(50);
+				active = array;
+			}
+			this.loading = false;
+			this.drawd = true;
+			return true;
+		}
 	}
+	async reload() {
+		var {canvas, SIZE} = this;
+		var scale = length/SIZE;
+		/**@param {number} x @param {number} y*/
+		function near(x, y) {
+			return nearby.map(([dx, dy]) => [x + dx, y + dy]).filter(([x, y]) => (x >= 0 && y >= 0 && x < SIZE && y < SIZE));
+		}
+		if(!this.drawn) {
+			canvas.width = length;
+			canvas.height = length;
+			canvas.length = length;
+			this.loading = true;
+			
+			let spreadMap = new Array(this.tiles.length);
+			let active = this.doorTiles.filter(([x, y, gate]) => this.entered.has(gate));
+			
+			let ts = 0;
+			while (active.length) {
+				let array = [];
+				++ts;
+				for (let [x, y, c] of active) {
+					this.updateTile(x, y);
+					near(x, y).forEach(([x, y]) => {
+						//Foreach nearby block
+						let i = this.I(x, y);
+						let tile = this.tiles[i];
+						if (!tile || tile.passable) {
+							if (spreadMap[i]) {
+								/*if (spreadMap[i] != c) {
+									join(c, spreadMap[i]);
+								}*/
+							} else {
+								spreadMap[i] = c;
+								array.push([x, y, c]);
+							}
+						}
+						if(tile instanceof Door) {
+							this.entered.add(tile.gate);
+						}
+					});
+				}
+				await delay(50);
+				active = array;
+			}
+			this.loading = false;
+			this.drawd = true;
+			return true;
+		}
+	}
+	entered = new Set;
 	drawConns() {
 		for(let room of this.conn) {
 			if(room) room.draw();
