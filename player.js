@@ -5,10 +5,16 @@ class Entity{
 		[this.x, this.y] = randomOf(room.air);
 		this.x += (1 - this.s)/2;
 		this.y += (1 - this.s)/2;
+		this.ox = this.mx;
+		this.oy = this.my;
 		room.occupants.add(this);
 		this.friction = friction;
 	}
 	tick() {}
+	move(a) {
+		this[a] += this["v" + a];
+		this.inWall(a);
+	}
 	update() {
 		if(this.goto) {
 			if(this.goto != this.room) this.goto.occupants.delete(this);
@@ -16,6 +22,8 @@ class Entity{
 			delete this.door;
 		}
 		this.tick();
+		this.ox = this.mx;
+		this.oy = this.my;
 		this.x += this.vx;
 		this.inWall("x");
 		this.y += this.vy;
@@ -120,8 +128,10 @@ class Entity{
 					tile.door.occupants.add(this);
 				}
 				if(tile instanceof Chest && this instanceof Player) {
-					if(!tile.isOpen) tile.open();
-					this.room.updateTile(x, y);
+					if(!tile.isOpen) {
+						tile.open();
+						this.room.updateTile(x, y);
+					}
 				}
 			}
 		}
@@ -157,8 +167,14 @@ class Entity{
 	get mx() {
 		return this.x + this.s/2;
 	}
+	set mx(x) {
+		this.x = x - this.s/2;
+	}
 	get my() {
 		return this.y + this.s/2;
+	}
+	set my(y) {
+		this.y = y - this.s/2;
 	}
 	radianTo(what) {
 		var arr = this.room.conn.map((val, id) => [val, id]).filter(([room]) => room == what.room);
@@ -241,8 +257,8 @@ class Entity{
 			if(type == 1) {
 				y += room.SIZE;
 			}
-			var touch = this._isTouching(this.mx, this.my, this.s, what.mx + x, what.my + y, what.s);
-			if(touch) return true;
+			var touch = this._isTouching(this.mx, this.my, this.s/2, what.mx + x, what.my + y, what.s/2);
+			if(touch) return [x, y];
 		}
 		return false;
 	}
@@ -261,6 +277,125 @@ class Entity{
 	collide(what) {
 		
 	}
+	/*collide(what) {
+		var x = abs(what.ox - this.ox);
+		var y = abs(what.oy - this.oy);
+		
+		if(x < y) a = "x";
+		 else var a = "y";
+		
+		var va = "v"+a;
+		var ma = "o"+a;
+		
+		var d = -this[ma] + what[ma];
+		
+		var m = this[va], w = what[va];
+		
+		this[va] = w * 1, what[va] = m * 1;
+		
+		//this[va] += 0.2 * sign(d);
+		//what[va] += -.2 * sign(d);
+	}*/
+	static bounce(b, a) {
+		//var {mass: bm} = b;
+		//var {mass: am} = a;
+		var bm = 0.01, am = 0.01;
+
+		am = sqrt(am);
+		bm = sqrt(bm);
+
+		var hrad = a.radianTo(b);
+		
+		var as = a.s/2;
+		var bs = b.s/2;
+		
+		//Center point
+		var px = a.mx + as * cos(hrad);
+		var py = a.my + as * sin(hrad);
+
+		/*a.mx = px - cos(hrad) * as;
+		a.my = py - sin(hrad) * as;
+		b.mx = px + cos(hrad) * bs;
+		b.my = py + sin(hrad) * bs;*/
+
+		//Line radian
+		var lrad = rDis(PI, hrad);
+		
+		var ar = atan(a.vy, a.vx);
+		var br = atan(b.vy, b.vx);
+
+		//Movement radian
+		var amr = rDis(lrad, ar);
+		var bmr = rDis(lrad, br);
+
+		//Movement force
+		var amf = cos(amr);
+		var bmf = cos(bmr);
+
+		if(sign(amf) > 0) amf = 0;
+		if(sign(bmf) < 0) bmf = 0;
+
+		//Movement saved
+		var ams = abs(sin(amr));
+		var bms = abs(sin(bmr));
+
+		//Velocity force
+		var avf = distance(a.vx, a.vy);
+		var bvf = distance(b.vx, b.vy);
+
+		var aforce = amf * avf;
+		var bforce = bmf * bvf;
+
+		var ab = 1;
+		var ba = 1;
+
+		var tm = am + bm;
+		var abm = am/tm;
+		var bam = bm/tm;
+
+		//bms = bms + (1 - bms) * (bam - 1);
+		//ams = ams + (1 - ams) * (abm - 1);
+
+		b.vx = b.vx * bms - cos(hrad) * aforce * ab;
+		b.vy = b.vy * bms - sin(hrad) * aforce * ab;
+		a.vx = a.vx * ams - cos(hrad) * bforce * ba;
+		a.vy = a.vy * ams - sin(hrad) * bforce * ba;
+	}
+	/*bounce(what) {
+		var s = (this.s + what.s)/2;
+		var test = (ax, bx, s) => (
+			ax + s > bx &&
+			bx + s > ax
+		);
+		var col = a => {
+			var va = "v"+a;
+			var oa = "o"+a;
+			var ma = "m"+a;
+			
+			var d = what[oa] - this[oa];
+			var b = this[va], c = what[va];
+			var d = c + b;
+			
+			var f = b/d, h = c/d;
+			
+			var p = what[oa] * h + this[oa] * f;
+			var s = -sign(d);
+			
+			this[ma] = p - s * (0.001 + this.s)/2;
+			what[ma] = p + s * (0.001 + what.s)/2;
+			
+			this[va] = c;
+			what[va] = b;
+		};
+		if(test(this.ox, what.ox, s)) {
+			col("x");
+		}else if(test(this.oy, what.oy, s)) {
+			col("y");
+		}else{
+			col("x");
+			col("y");
+		}
+	}*/
 	spd = 3/50;
 	x = 0;
 	y = 0;
@@ -279,6 +414,7 @@ class Player extends Entity{
 			this.canvas = map;
 			delete this.ctx;
 		}
+		this.melee = new Melee(this);
 	}
 	drawCanv(scale) {
 		var map = Bitmaps.Slime.body;
@@ -352,13 +488,23 @@ class Player extends Entity{
 		
 		var dis = rDis(this.rad + this.vr * powR(f, 100), this.dir);
 		var aDis = abs(dis);
-		var lim = .07
+		var lim = .1;
 		//if(weight) lim /= weight;
 		if(aDis > lim) aDis = lim;
 		this.vr += aDis * sign(dis);
 		if(abs(rDis(this.dir, this.rad)) < lim) {
 			this.vr = 0;
 			this.rad = this.dir;
+		}
+		var item = this.inv.hotbar[this.inv.selected];
+		if(item) item = item[0];
+		if(item && item.melee) {
+			this.melee.add();
+			this.melee.s = item.s;
+			this.inUse = true;
+		}else if(this.melee.room) {
+			this.melee.remove();
+			this.inUse = false;
 		}
 	}
 	update() {
@@ -372,7 +518,54 @@ class Player extends Entity{
 	dir = 0;
 	rad = 0;
 	inv = new Inventory(this);
+}
+class Melee extends Entity{
+	constructor(parent) {
+		super(parent.room);
+		this.room.occupants.delete(this);
+		delete this.room;
+		this.parent = parent;
+	}
+	tick() {
+		var {parent} = this;
+		var {rad} = parent;
+		var c = cos(rad), s = sin(rad);
+		var px = parent.mx + (parent.s/2 + this.s) * c - this.s/2;
+		var py = parent.my + (parent.s/2 + this.s) * s - this.s/2;
+		this.x = px;
+		this.y = py;
+		this.room = parent.room;
+		var {lrad} = this;
+		if(lrad) {
+			this.lrad = rad;
+			this.rad = atan(
+				sin(rad) - sin(lrad),
+				cos(rad) - cos(lrad)
+			);
+		}else{
+			this.rad = rad;
+			this.lrad = rad;
+		}
+	}
+	draw() {}
+	add() {
+		var {parent} = this;
+		if(parent.room != this.room) {
+			this.room?.occupants.delete(this);
+		}
+		this.room = parent.room;
+		this.room.occupants.add(this);
+	}
+	remove() {
+		this.room.occupants.delete(this);
+	}
 	collide(what) {
+		var {rad} = this;
+		if(what instanceof Enemy) {
+			//what.room.occupants.delete(what);
+			what.vx += cos(rad) * player.vr;
+			what.vy += sin(rad) * player.vr;
+		}
 	}
 }
 function Inventory(parent) {

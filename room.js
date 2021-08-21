@@ -782,18 +782,18 @@ class Room {
 			canvas.height = length;
 			canvas.length = length;
 			
-			/*for (let x = 0; x < SIZE; x++) {
+			for (let x = 0; x < SIZE; x++) {
 				for (let y = 0; y < SIZE; y++) {
 					this.drawTile(x, y, scale);
 				}
-			}*/
-			for(let x = 0; x < SIZE; x++) {
+			}
+			/*for(let x = 0; x < SIZE; x++) {
 				for (let y = 0; y < SIZE; y++) {
 					if(!(this.getTile(x, y) instanceof Block)) {
 						this.updateTile(x, y);
 					}
 				}
-			}
+			}*/
 			var r = true;
 		}
 		if(onscreen) {
@@ -802,11 +802,10 @@ class Room {
 		}
 		return r;
 	}
-	/*async load() {
+	async load() {
 		var {canvas, SIZE} = this;
 		var scale = length/SIZE;
 		if((!this.drawn && !this.loading) || canvas.length != length) {
-			this.drawd = true;
 			canvas.width = length;
 			canvas.height = length;
 			canvas.length = length;
@@ -821,12 +820,14 @@ class Room {
 				}
 			}
 			this.loading = false;
+			this.drawd = true;
 		}
-	}*/
+	}
 	async loadFromDoor(type) {
-		var {canvas, SIZE} = this;
+		this.load();
+		/*var {canvas, SIZE} = this;
 		var scale = length/SIZE;
-		/**@param {number} x @param {number} y*/
+		/**@param {number} x @param {number} y
 		function near(x, y) {
 			return nearby.map(([dx, dy]) => [x + dx, y + dy]).filter(([x, y]) => (x >= 0 && y >= 0 && x < SIZE && y < SIZE));
 		}
@@ -856,9 +857,7 @@ class Room {
 						let tile = this.tiles[i];
 						if (!tile || tile.passable) {
 							if (spreadMap[i]) {
-								/*if (spreadMap[i] != c) {
-									join(c, spreadMap[i]);
-								}*/
+								
 							} else {
 								spreadMap[i] = c;
 								array.push([x, y, c]);
@@ -875,12 +874,13 @@ class Room {
 			this.loading = false;
 			this.drawd = true;
 			return true;
-		}
+		}*/
 	}
 	async reload() {
-		var {canvas, SIZE} = this;
+		await this.load();
+		/*var {canvas, SIZE} = this;
 		var scale = length/SIZE;
-		/**@param {number} x @param {number} y*/
+		//@param {number} x @param {number} y
 		function near(x, y) {
 			return nearby.map(([dx, dy]) => [x + dx, y + dy]).filter(([x, y]) => (x >= 0 && y >= 0 && x < SIZE && y < SIZE));
 		}
@@ -905,9 +905,7 @@ class Room {
 						let tile = this.tiles[i];
 						if (!tile || tile.passable) {
 							if (spreadMap[i]) {
-								/*if (spreadMap[i] != c) {
-									join(c, spreadMap[i]);
-								}*/
+								
 							} else {
 								spreadMap[i] = c;
 								array.push([x, y, c]);
@@ -924,6 +922,11 @@ class Room {
 			this.loading = false;
 			this.drawd = true;
 			return true;
+		}*/
+	}
+	reloadConns() {
+		for(let room of this.conn) {
+			if(room) room.reload();
 		}
 	}
 	entered = new Set;
@@ -987,13 +990,14 @@ class Room {
 		for(let entity of this.occupants) {
 			if(entity.room == this) {
 				entity.update();
-				set.add(entity);
-				for(let enemy of this.occupants) {
-					if(set.has(enemy)) continue;
-					if(entity.isTouching(enemy)) {
-						enemy.collide(entity);
-						entity.collide(enemy);
-					}
+			}
+			set.add(entity);
+			for(let enemy of this.occupants) {
+				if(set.has(enemy)) continue;
+				if(entity.isTouching(enemy)) {
+					//Entity.bounce(entity, enemy);
+					entity.collide(enemy);
+					enemy.collide(entity);
 				}
 			}
 		}

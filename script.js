@@ -102,6 +102,8 @@ function update() {
 	if(player.goto && !player.goto.loading) {player.goto
 		.loadFromDoor(player.door).then((a) => a && makeRCM());
 	}
+	mroom.reload();
+	mroom.reloadConns();
 	//mroom.loadConns();
 	// mroom.drawConns();
 	var x = (canvas.width)/2;
@@ -247,6 +249,7 @@ var rooms = [];
 var length;
 var zoom = 10;
 function resize(zm) {
+	var len = length;
 	rcm = [];
 	if(isNaN(zm)) zm = zoom/SIZE;
 	canvas.width = innerWidth;
@@ -255,7 +258,12 @@ function resize(zm) {
 	canvas.length = length;
 	scale = floor(length/(SIZE*zm*8)) * 8;
 	length = scale * SIZE;
-	rooms.forEach(room => delete room.drawd);
+	if(len != length) rooms.forEach(room => {
+		if(room.drawn) {
+			room.drawd = false;
+			room.draw();
+		}
+	});
 }
 var player;
 async function start() {
@@ -330,6 +338,16 @@ var game = {
 			}
 			touch = touches.get(1);
 			if(touch && touch.active) {
+				px += touch.mx / s;
+				py += touch.my / s;
+				dis2 = 1;
+			}
+			//Mouse
+			touch = touches.get(-1);
+			if(touch && touch.active) {
+				touch.drawMode = "line";
+				touch.sx = innerHeight/2;
+				touch.sy = innerWidth/2;
 				px += touch.mx / s;
 				py += touch.my / s;
 				dis2 = 1;

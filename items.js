@@ -37,9 +37,10 @@ class Sword extends Item{
 		ctx.drawImage(this.img, dx + x * scale, dy + y * scale, len, len);
 	}
 	collide(what) {
-		super.collide();
+		super.collide(what);
 	}
 	s = 4/8;
+	static melee = true;
 	class = Sword;
 	static s = 4/8;
 	static rad = PI/4;

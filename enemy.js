@@ -272,6 +272,23 @@ class Slime extends Enemy{
 			vy /= 2;
 			this.enemy = {x, y, mx, my, vx, vy, room, static: 0};
 		}
+		for(let enemy of this.entities) {
+			if(enemy instanceof Enemy) {
+				var dis = this.distance(enemy);
+				if(dis < 2) this.brainPoints.push([
+					this.radianTo(enemy),
+					-(2 - dis)/6
+				]);
+			}
+			
+			/*if(enemy instanceof Melee) {
+				var dis = this.distance(enemy);
+				if(dis < 2) this.brainPoints.push([
+					this.radianTo(enemy),
+					-(3 - dis/2)
+				]);
+			}*/
+		}
 		if(this.enemy) {
 			let player = this.enemy;
 			if(this.room == player.room || player.room.isConnectedTo(this.room)) {
@@ -301,9 +318,9 @@ class Slime extends Enemy{
 				var dis, rad = this.radianTo(player);
 				if(dis < 7) {
 					this.brainPoints.push([rad, .8]);
-					if(!player.static && dis < 3) {
+					/*if(!player.static && dis < 2) {
 						this.brainPoints.push([rad + PI, 1]);
-					}
+					}*/
 				}
 				++player.static;
 				if(player.static == 200) delete this.enemy;

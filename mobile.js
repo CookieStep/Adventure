@@ -17,16 +17,28 @@ class Pointer{
 		return this.y - this.sy;
 	}
 	draw() {
-		ctx.beginPath();
-		ctx.arc(this.sx, this.sy, scale/4, 0, PI * 2);
-		ctx.arc(this.x, this.y, scale/4, 0, PI * 2);
 		ctx.fillStyle = `hsla(${this.id/touches.size * 360}, 100%, 50%, ${.2 + this.active * .8})`;
-		ctx.fill();
-		var dis = distance(this.mx, this.my);
-		ctx.beginPath();
-		ctx.arc(this.sx, this.sy, dis, 0, PI * 2);
 		ctx.strokeStyle = ctx.fillStyle;
-		ctx.stroke();
+		var s = scale/16;
+		if(this.drawMode == "line") {
+			ctx.beginPath();
+			ctx.moveTo(this.sx, this.sy);
+			ctx.lineTo(this.x, this.y);
+			ctx.stroke();
+			ctx.beginPath();
+			//ctx.arc(this.sx, this.sy, scale/4, 0, PI * 2);
+			ctx.arc(this.x, this.y, s, 0, PI * 2);
+			ctx.fill();
+		}else{
+			ctx.beginPath();
+			ctx.arc(this.sx, this.sy, s, 0, PI * 2);
+			ctx.arc(this.x, this.y, s, 0, PI * 2);
+			ctx.fill();
+			var dis = distance(this.mx, this.my);
+			ctx.beginPath();
+			ctx.arc(this.sx, this.sy, dis, 0, PI * 2);
+			ctx.stroke();
+		}
 	}
 	update(touch) {
 		touch = (touch || this.touch);
