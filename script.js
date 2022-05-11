@@ -56,14 +56,14 @@ var rDis = (a, b, c=(PI * 2)) => rotate(loop(b - a, c), c);
 var powR = (x, y) => (pow(x, y) - 1)/(x - 1);
 
 var debug = {
-	showBuild: 1,
+	showBuild: 0,
 	showBuildFlow: {
 		enabled: false,
 		flowTime: 1,
 		afterFlow: 10
 	},
 	showConnect: {
-		enabled: 1,
+		enabled: 0,
 		settleTick: 1,
 		afterSettle: 100
 	},
