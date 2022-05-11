@@ -56,21 +56,21 @@ var rDis = (a, b, c=(PI * 2)) => rotate(loop(b - a, c), c);
 var powR = (x, y) => (pow(x, y) - 1)/(x - 1);
 
 var debug = {
-	showBuild: 0,
+	showBuild: 1,
 	showBuildFlow: {
 		enabled: false,
 		flowTime: 1,
 		afterFlow: 10
 	},
 	showConnect: {
-		enabled: false,
+		enabled: 1,
 		settleTick: 1,
 		afterSettle: 100
 	},
 	showFlowtest: 0
 };
 const SIZE = 15;
-var count = 20;
+var count = 100;
 
 var doorcoord = [
 	[-1, 0],
