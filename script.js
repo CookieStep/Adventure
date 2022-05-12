@@ -63,14 +63,14 @@ var debug = {
 		afterFlow: 10
 	},
 	showConnect: {
-		enabled: 0,
+		enabled: 1,
 		settleTick: 1,
-		afterSettle: 100
+		afterSettle: 10
 	},
 	showFlowtest: 0
 };
 const SIZE = 15;
-var count = 100;
+var count = 40;
 
 var doorcoord = [
 	[-1, 0],
