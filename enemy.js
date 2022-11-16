@@ -219,14 +219,14 @@ class Slime extends Enemy{
 			ctx.lineTo(dx + x * scale, dy + y * scale);
 			ctx.stroke();
 		}
-		if(this.collLines) for(let [d, rad, dis] of this.collLines) {
+		*/if(this.collLines) for(let [d, rad, dis] of this.collLines) {
 			ctx.fillStyle = "blue";
 			ctx.beginPath();
 			var x = this.mx + cos(rad) * dis;
 			var y = this.my + sin(rad) * dis;
 			ctx.arc(dx + x * scale, dy + y * scale, scale/16, 0, PI * 2);
 			ctx.fill();
-		}
+		}/*
 		ctx.strokeStyle = "black";
 		ctx.beginPath();
 		ctx.moveTo(dx + this.mx * scale, dy + this.my * scale);
